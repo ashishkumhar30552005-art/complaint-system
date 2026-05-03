@@ -1,46 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 const Complaint = require('../models/Complaint');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const { classifyComplaint } = require('../services/geminiAI');
 const { notifyComplaintSubmitted } = require('../services/notificationService');
 
-// Multer setup
-const uploadDir = path.join(__dirname, '../uploads');
-if (process.env.NODE_ENV !== 'production' && !fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|gif|webp/;
-    if (allowed.test(path.extname(file.originalname).toLowerCase()) && allowed.test(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files allowed!'));
-    }
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'complaint-system',
+    allowed_formats: ['jpeg', 'jpg', 'png', 'gif', 'webp']
   }
 });
 
-// Submit complaint
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+
 router.post('/', auth, upload.array('photos', 5), async (req, res) => {
   try {
     const { title, description, category, address, ward, lat, lng } = req.body;
-    const photos = req.files ? req.files.map(f => `/uploads/${f.filename}`) : [];
-
-    // AI Classification
+    const photos = req.files ? req.files.map(f => f.path) : [];
     const aiResult = await classifyComplaint(title, description, category);
-
     const complaint = new Complaint({
       user: req.user._id,
       title, description, category,
@@ -49,22 +38,16 @@ router.post('/', auth, upload.array('photos', 5), async (req, res) => {
       priority: aiResult.priority,
       aiClassification: aiResult
     });
-
     await complaint.save();
-
-    // Send Email + SMS notification
-    console.log('Sending notification to:', req.user.email, req.user.phone);
     notifyComplaintSubmitted(req.user, complaint).catch(err =>
       console.error('Notification error:', err.message)
     );
-
     res.status(201).json({ message: 'Complaint submitted successfully!', complaint });
   } catch (err) {
     res.status(500).json({ message: 'Error submitting complaint', error: err.message });
   }
 });
 
-// Get user's complaints
 router.get('/my', auth, async (req, res) => {
   try {
     const complaints = await Complaint.find({ user: req.user._id })
@@ -76,7 +59,6 @@ router.get('/my', auth, async (req, res) => {
   }
 });
 
-// Get single complaint
 router.get('/:id', auth, async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id)
@@ -89,7 +71,6 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
-// Rate a resolved complaint
 router.post('/:id/rate', auth, async (req, res) => {
   try {
     const { rating, feedback } = req.body;
