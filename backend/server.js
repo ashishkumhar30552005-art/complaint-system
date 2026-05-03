@@ -21,15 +21,12 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/worker', require('./routes/worker'));
 app.use('/api/ai', require('./routes/ai'));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/home.html'));
-});
+const frontendPath = path.join(__dirname, '../frontend');
+app.use(express.static(frontendPath));
 
-app.get('/index.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'home.html'));
 });
-
-app.use(express.static(path.join(__dirname, '../frontend')));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
