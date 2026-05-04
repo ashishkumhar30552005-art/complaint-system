@@ -16,14 +16,19 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/server.js"
+      "dest": "backend/server.js",
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     },
     {
       "src": "/uploads/(.*)",
       "dest": "backend/server.js"
     },
     {
-      "src": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf))",
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf))",
+      "dest": "frontend/$1"
+    },
+    {
+      "src": "/(.*\\.html)",
       "dest": "frontend/$1"
     },
     {
