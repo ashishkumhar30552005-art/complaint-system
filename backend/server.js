@@ -24,7 +24,11 @@ app.use('/api/ai', require('./routes/ai'));
 const frontendPath = path.join(__dirname, '../frontend');
 app.use(express.static(frontendPath));
 
+// FIXED: API routes ko HTML se respond nahi karega
 app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ message: 'API route not found' });
+  }
   res.sendFile(path.join(frontendPath, 'home.html'));
 });
 

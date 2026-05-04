@@ -19,6 +19,10 @@
       "dest": "backend/server.js"
     },
     {
+      "src": "/uploads/(.*)",
+      "dest": "backend/server.js"
+    },
+    {
       "src": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf))",
       "dest": "frontend/$1"
     },
