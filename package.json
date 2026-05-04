@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "AI-Based Municipal Complaint & Waste Management System",
   "main": "backend/server.js",
-  "engines": { "node": "18.x" },
+  "engines": { "node": "24.x" },
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js"
