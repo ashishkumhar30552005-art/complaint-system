@@ -28,7 +28,13 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(frontendPath, 'home.html'));
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// Local development ke liye
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
+
+// Vercel ke liye (IMPORTANT!)
+module.exports = app;
